@@ -3,6 +3,30 @@
 var gsSuspendedTab = (function() {
   'use strict';
 
+  async function setVimiumTabSwitchShortcuts(_window) {
+    // Add hotkey listener for next/previous tab
+    // Responds to Shift+J and Shift+K to match Vimium
+    _window.addEventListener('keypress', function(event) {
+        var nextPrevTab = function(dir) {
+            chrome.tabs.query({currentWindow: true}, function(tabs) {
+                var i = 0; while(!tabs[i].active) { i++; };
+                chrome.tabs.update(tabs[(i+tabs.length+dir) % tabs.length].id, {active: true});
+            });
+        };
+
+        if (event.shiftKey === true) {
+            switch ( event.key ) {
+                case 'J':
+                    nextPrevTab(-1);
+                    break;
+                case 'K':
+                    nextPrevTab(1);
+                    break;
+            }
+        }
+    });
+  }
+
   async function initTab(tab, tabView, { quickInit }) {
     if (!tabView) {
       gsUtils.warning(
@@ -81,6 +105,9 @@ var gsSuspendedTab = (function() {
     setScrollPosition(tabView.document, scrollPosition, previewMode);
     tgs.setTabStatePropForTabId(tab.id, tgs.STATE_SCROLL_POS, scrollPosition);
     // const whitelisted = gsUtils.checkWhiteList(originalUrl);
+
+    // Sets Vimium tab switching shortcuts
+    await setVimiumTabSwitchShortcuts(tabView.window);
   }
 
   function showNoConnectivityMessage(tabView) {
